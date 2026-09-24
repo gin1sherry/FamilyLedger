@@ -18,11 +18,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.familyledger.ui.screens.HomePlaceholder
+import androidx.navigation.navArgument
+import com.example.familyledger.ui.detail.DetailScreen
+import com.example.familyledger.ui.home.HomeScreen
+import com.example.familyledger.ui.manual.ManualEntryScreen
 import com.example.familyledger.ui.screens.SearchPlaceholder
 import com.example.familyledger.ui.screens.SettingsPlaceholder
 import com.example.familyledger.ui.theme.FamilyLedgerTheme
@@ -40,6 +44,8 @@ private val topLevelTabs = listOf(
     TopLevel("settings", "设置", Icons.Filled.Settings)
 )
 
+private val topLevelRoutes = topLevelTabs.map { it.route }.toSet()
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,24 +56,27 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val backStack by navController.currentBackStackEntryAsState()
                 val currentRoute = backStack?.destination?.route ?: "home"
+                val showBottomBar = currentRoute in topLevelRoutes
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
-                        NavigationBar {
-                            topLevelTabs.forEach { tab ->
-                                NavigationBarItem(
-                                    selected = currentRoute == tab.route,
-                                    onClick = {
-                                        navController.navigate(tab.route) {
-                                            popUpTo("home") { saveState = true }
-                                            launchSingleTop = true
-                                            restoreState = true
-                                        }
-                                    },
-                                    icon = { Icon(tab.icon, contentDescription = tab.label) },
-                                    label = { Text(tab.label) }
-                                )
+                        if (showBottomBar) {
+                            NavigationBar {
+                                topLevelTabs.forEach { tab ->
+                                    NavigationBarItem(
+                                        selected = currentRoute == tab.route,
+                                        onClick = {
+                                            navController.navigate(tab.route) {
+                                                popUpTo("home") { saveState = true }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        },
+                                        icon = { Icon(tab.icon, contentDescription = tab.label) },
+                                        label = { Text(tab.label) }
+                                    )
+                                }
                             }
                         }
                     }
@@ -77,9 +86,26 @@ class MainActivity : ComponentActivity() {
                         startDestination = "home",
                         modifier = Modifier.padding(padding)
                     ) {
-                        composable("home") { HomePlaceholder() }
+                        composable("home") {
+                            HomeScreen(
+                                onAddClick = { navController.navigate("manual") },
+                                onRecordClick = { id -> navController.navigate("detail/$id") }
+                            )
+                        }
                         composable("search") { SearchPlaceholder() }
                         composable("settings") { SettingsPlaceholder() }
+                        composable("manual") {
+                            ManualEntryScreen(
+                                onBack = { navController.popBackStack() },
+                                onSaved = { navController.popBackStack("home", false) }
+                            )
+                        }
+                        composable(
+                            route = "detail/{recordId}",
+                            arguments = listOf(navArgument("recordId") { type = NavType.LongType })
+                        ) {
+                            DetailScreen(onBack = { navController.popBackStack() })
+                        }
                     }
                 }
             }

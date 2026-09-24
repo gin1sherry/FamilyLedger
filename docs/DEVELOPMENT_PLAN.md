@@ -4,7 +4,7 @@
 > 交付形态：**完整 Android 工程**（Kotlin · Compose · MVVM · Room · Hilt）  
 > 工作区：`android/` ｜ Git 仓库根：本目录  
 > 日期：2026-09-24  
-> 状态：**M2 完成（单测 + assembleDebug 通过）→ 等待进入 M3**
+> 状态：**M3 完成（应用版本 0.3.0 / versionCode 3）→ 等待进入 M4**
 
 ### 编码纪律（必须遵守）
 
@@ -51,7 +51,7 @@
 | M0 | 决议与计划 | PRD V1.1、本计划、Git | 本文件 |
 | M1 | 工程骨架 | Gradle/Hilt/Compose/Navigation/Theme/空屏 | `assembleDebug` 通过 ✅ |
 | M2 | 数据层 | Entity/DAO/DB/Repository/金额工具 | 单测：分元换算、预算聚合 ✅ |
-| M3 | 手动记账 + 首页 | F2/F3 时间线分页、月份切换 | 离线记一笔首页可见 |
+| M3 | 手动记账 + 首页 | F2/F3 时间线分页、月份切换 | 离线记一笔首页可见 ✅ |
 | M4 | 编辑删除 F9 | 详情、回算、notified | 删除后汇总正确 |
 | M5 | 预算 F4 | 分类+总预算+横幅 | 80% 触发一次 |
 | M6 | AI 识别 F1 | 压缩、API、确认页、失败/无网队列 | 有 Key 可识别；无网暂存 |
