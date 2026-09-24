@@ -26,10 +26,12 @@ class RecognitionException(
 
 /**
  * 多模态识别 API — 仅此处联网。
- * Key 来自本机 local.properties → BuildConfig。
+ * Key/地址：设置页 DataStore 优先，其次 BuildConfig（local.properties）。
  */
 @Singleton
-class AiRecognitionService @Inject constructor() {
+class AiRecognitionService @Inject constructor(
+    private val settings: com.example.familyledger.data.repository.SettingsRepository
+) {
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(8, TimeUnit.SECONDS)
@@ -37,17 +39,18 @@ class AiRecognitionService @Inject constructor() {
         .writeTimeout(15, TimeUnit.SECONDS)
         .build()
 
-    fun recognize(
+    suspend fun recognize(
         imageBase64: String,
         imageType: String,
         forceReceipt: Boolean
     ): RecognitionResult {
-        if (BuildConfig.AI_API_KEY.isBlank()) {
-            throw RecognitionException(RecognitionErrorKind.NO_KEY, "未配置 AI_API_KEY")
+        val cfg = settings.aiConfig()
+        if (cfg.apiKey.isBlank()) {
+            throw RecognitionException(RecognitionErrorKind.NO_KEY, "未配置 AI API Key（设置 → AI 识别）")
         }
         val prompt = buildPrompt(imageType, forceReceipt)
         val body = JSONObject()
-            .put("model", BuildConfig.AI_MODEL)
+            .put("model", cfg.model)
             .put(
                 "messages",
                 JSONArray().put(
@@ -72,8 +75,8 @@ class AiRecognitionService @Inject constructor() {
             .toString()
 
         val request = Request.Builder()
-            .url(BuildConfig.AI_BASE_URL.trimEnd('/') + "/chat/completions")
-            .addHeader("Authorization", "Bearer " + BuildConfig.AI_API_KEY)
+            .url(cfg.baseUrl.trimEnd('/') + "/chat/completions")
+            .addHeader("Authorization", "Bearer " + cfg.apiKey)
             .addHeader("Content-Type", "application/json")
             .post(body.toRequestBody("application/json".toMediaType()))
             .build()

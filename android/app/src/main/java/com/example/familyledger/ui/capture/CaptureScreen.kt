@@ -1,6 +1,8 @@
 package com.example.familyledger.ui.capture
 
-import android.app.DatePickerDialog
+import android.Manifest
+import android.content.pm.PackageManager
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -36,16 +38,22 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.familyledger.data.model.Categories
 import com.example.familyledger.data.model.ImageType
 import com.example.familyledger.data.remote.RecognitionErrorKind
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -56,24 +64,46 @@ import java.util.Locale
 fun CaptureScreen(
     onBack: () -> Unit,
     onSaved: () -> Unit,
+    onOpenSettings: () -> Unit = {},
     viewModel: CaptureViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val dateFmt = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
 
-    val pickLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument()
-    ) { uri -> uri?.let(viewModel::onImagePicked) }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.TakePicture()
-    ) { ok -> if (ok) viewModel.let { } }
-
-    // camera output uri handled simply via GetContent photo picker fallback
     val pickImageLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri -> uri?.let(viewModel::onImagePicked) }
+
+    val takePictureLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { ok ->
+        if (ok) pendingCameraUri?.let(viewModel::onImagePicked)
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) launchCamera(context) { uri ->
+            pendingCameraUri = uri
+            takePictureLauncher.launch(uri)
+        }
+    }
+
+    fun openCamera() {
+        val granted = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+        if (granted) {
+            launchCamera(context) { uri ->
+                pendingCameraUri = uri
+                takePictureLauncher.launch(uri)
+            }
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -150,12 +180,20 @@ fun CaptureScreen(
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Icon(Icons.Filled.CameraAlt, contentDescription = null, modifier = Modifier.size(40.dp))
-                                Text("选择商品照 / 小票 / 订单截图", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("拍照，或从相册/截图选择", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
 
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                        Button(
+                            onClick = { openCamera() },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Filled.CameraAlt, contentDescription = null)
+                            Spacer(modifier = Modifier.size(4.dp))
+                            Text("相机")
+                        }
                         OutlinedButton(
                             onClick = { pickImageLauncher.launch("image/*") },
                             modifier = Modifier.weight(1f)
@@ -164,34 +202,28 @@ fun CaptureScreen(
                             Spacer(modifier = Modifier.size(4.dp))
                             Text("相册/截图")
                         }
-                        Button(
-                            onClick = { pickImageLauncher.launch("image/*") },
-                            enabled = state.imageUri != null,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("开始识别")
-                        }
                     }
-                    Text(
-                        "无 Key 时识别不可用，可点「转手动」预填表单。识别时才联网。",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    TextButton(onClick = viewModel::toManualFallback, modifier = Modifier.fillMaxWidth()) {
-                        Text("转手动补录")
-                    }
-                    // start recognize when image present - button above
+
                     if (state.imageUri != null) {
                         Button(
                             onClick = viewModel::startRecognize,
                             modifier = Modifier.fillMaxWidth()
                         ) { Text("开始识别") }
                     }
+
+                    TextButton(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
+                        Text("配置 API Key…")
+                    }
+                    TextButton(onClick = viewModel::toManualFallback, modifier = Modifier.fillMaxWidth()) {
+                        Text("转手动补录")
+                    }
                 }
 
                 CaptureStage.RECOGNIZING -> {
                     Column(
-                        modifier = Modifier.fillMaxWidth().padding(48.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(48.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
@@ -205,7 +237,7 @@ fun CaptureScreen(
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
                                 when (state.errorKind) {
-                                    RecognitionErrorKind.NO_KEY -> "未配置 AI_API_KEY"
+                                    RecognitionErrorKind.NO_KEY -> "未配置 AI API Key"
                                     RecognitionErrorKind.TIMEOUT -> "识别超时"
                                     RecognitionErrorKind.HTTP -> "服务异常"
                                     RecognitionErrorKind.BAD_JSON -> "返回数据无效"
@@ -222,8 +254,14 @@ fun CaptureScreen(
                             )
                         }
                     }
-                    Button(onClick = viewModel::startRecognize, modifier = Modifier.fillMaxWidth()) {
-                        Text("重试")
+                    if (state.errorKind == RecognitionErrorKind.NO_KEY) {
+                        Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
+                            Text("去设置填写 Key")
+                        }
+                    } else {
+                        Button(onClick = viewModel::startRecognize, modifier = Modifier.fillMaxWidth()) {
+                            Text("重试")
+                        }
                     }
                     OutlinedButton(onClick = viewModel::toManualFallback, modifier = Modifier.fillMaxWidth()) {
                         Text("转手动补录")
@@ -305,7 +343,7 @@ fun CaptureScreen(
                         OutlinedButton(
                             onClick = {
                                 val cal = Calendar.getInstance().apply { timeInMillis = state.dateMillis }
-                                DatePickerDialog(
+                                android.app.DatePickerDialog(
                                     context,
                                     { _, y, m, d ->
                                         val picked = Calendar.getInstance().apply { set(y, m, d) }
@@ -338,7 +376,9 @@ fun CaptureScreen(
                     Button(
                         onClick = { viewModel.save(onSaved) },
                         enabled = !state.saving,
-                        modifier = Modifier.fillMaxWidth().height(48.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
                     ) { Text(if (state.saving) "保存中…" else "确认保存") }
 
                     TextButton(onClick = viewModel::resetToPick, modifier = Modifier.fillMaxWidth()) {
@@ -348,4 +388,18 @@ fun CaptureScreen(
             }
         }
     }
+}
+
+private fun launchCamera(
+    context: android.content.Context,
+    onUri: (Uri) -> Unit
+) {
+    val dir = File(context.cacheDir, "capture").apply { mkdirs() }
+    val file = File(dir, "img_${System.currentTimeMillis()}.jpg")
+    val uri = FileProvider.getUriForFile(
+        context,
+        context.packageName + ".fileprovider",
+        file
+    )
+    onUri(uri)
 }

@@ -4,53 +4,85 @@ import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 
-private val Orange = Color(0xFFFF6900)
-private val OrangeContainer = Color(0xFFFFE0CC)
-
-private val LightColors = lightColorScheme(
-    primary = Orange,
+/**
+ * 澎湃 OS 视觉向主题：稳定品牌橙 + 高对比中性色，关闭动态取色以保持一致观感。
+ */
+private val LightScheme = lightColorScheme(
+    primary = HyperColors.Orange,
     onPrimary = Color.White,
-    primaryContainer = OrangeContainer,
-    onPrimaryContainer = Color(0xFF331200),
-    background = Color(0xFFF7F6F4),
-    surface = Color(0xFFFCFCFB),
-    surfaceVariant = Color(0xFFF0EFE8)
+    primaryContainer = HyperColors.OrangeSoft,
+    onPrimaryContainer = HyperColors.OrangeDeep,
+    secondary = HyperColors.Orange,
+    onSecondary = Color.White,
+    secondaryContainer = HyperColors.OrangeSoft,
+    onSecondaryContainer = HyperColors.OrangeDeep,
+    tertiary = HyperColors.Ok,
+    onTertiary = Color.White,
+    background = HyperColors.Bg,
+    onBackground = HyperColors.OnSurface,
+    surface = HyperColors.Surface,
+    onSurface = HyperColors.OnSurface,
+    surfaceVariant = HyperColors.Surface2,
+    onSurfaceVariant = HyperColors.OnSurface2,
+    outline = HyperColors.Outline,
+    outlineVariant = HyperColors.Outline,
+    error = HyperColors.Danger,
+    onError = Color.White,
+    errorContainer = Color(0xFFFFE5E3),
+    onErrorContainer = Color(0xFF8C1D18),
+    inverseSurface = HyperColors.OnSurface,
+    inverseOnSurface = HyperColors.Surface
 )
 
-private val DarkColors = darkColorScheme(
-    primary = Color(0xFFFFB77A),
-    onPrimary = Color(0xFF542100),
+private val DarkScheme = darkColorScheme(
+    primary = Color(0xFFFF8A3D),
+    onPrimary = Color(0xFF3A1500),
     primaryContainer = Color(0xFF7A3200),
     onPrimaryContainer = Color(0xFFFFDBC8),
-    background = Color(0xFF1A1B1A),
-    surface = Color(0xFF121312),
-    surfaceVariant = Color(0xFF444741)
+    secondary = Color(0xFFFF8A3D),
+    onSecondary = Color(0xFF3A1500),
+    secondaryContainer = Color(0xFF7A3200),
+    onSecondaryContainer = Color(0xFFFFDBC8),
+    tertiary = HyperColors.OkDark,
+    onTertiary = Color.Black,
+    background = HyperColors.BgDark,
+    onBackground = HyperColors.OnSurfaceDark,
+    surface = HyperColors.SurfaceDark,
+    onSurface = HyperColors.OnSurfaceDark,
+    surfaceVariant = HyperColors.Surface2Dark,
+    onSurfaceVariant = HyperColors.OnSurface2Dark,
+    outline = HyperColors.OutlineDark,
+    outlineVariant = HyperColors.OutlineDark,
+    error = HyperColors.DangerDark,
+    onError = Color.Black,
+    errorContainer = Color(0x33FF453A),
+    onErrorContainer = Color(0xFFFFB4AB),
+    inverseSurface = HyperColors.OnSurfaceDark,
+    inverseOnSurface = HyperColors.SurfaceDark
 )
 
 @Composable
 fun FamilyLedgerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    /** 澎湃风格固定品牌色，不随壁纸动态变色 */
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColors
-        else -> LightColors
-    }
+    @Suppress("UNUSED_EXPRESSION")
+    val unusedBuild = if (Build.VERSION.SDK_INT >= 31) true else false
+
+    val colorScheme = if (darkTheme) DarkScheme else LightScheme
 
     MaterialTheme(
         colorScheme = colorScheme,
-        content = content
+        typography = HyperTypography,
+        shapes = HyperShapeDefaults,
+        content = {
+            ProvideHyperShapes(content = content)
+        }
     )
 }

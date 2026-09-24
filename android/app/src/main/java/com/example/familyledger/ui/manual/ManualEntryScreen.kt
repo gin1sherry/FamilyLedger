@@ -12,27 +12,33 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.familyledger.data.model.Categories
+import com.example.familyledger.ui.theme.HyperColors
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -74,6 +80,13 @@ fun ManualEntryScreen(
                 onValueChange = viewModel::onName,
                 label = { Text("商品名称 *") },
                 singleLine = true,
+                shape = RoundedCornerShape(18.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
@@ -118,7 +131,12 @@ fun ManualEntryScreen(
                         FilterChip(
                             selected = state.category == cat,
                             onClick = { viewModel.onCategory(cat) },
-                            label = { Text(cat) }
+                            label = { Text(cat) },
+                            shape = RoundedCornerShape(99.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = HyperColors.OrangeSoft,
+                                selectedLabelColor = HyperColors.OrangeDeep
+                            )
                         )
                     }
                 }
@@ -159,11 +177,16 @@ fun ManualEntryScreen(
                     }
                 },
                 enabled = !state.saving,
+                shape = RoundedCornerShape(99.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = HyperColors.Orange,
+                    contentColor = Color.White
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp)
+                    .height(52.dp)
             ) {
-                Text(if (state.saving) "保存中…" else "保存")
+                Text(if (state.saving) "保存中…" else "保存", fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
             }
         }
     }

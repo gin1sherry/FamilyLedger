@@ -4,6 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -11,13 +15,18 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -50,6 +59,7 @@ private val topLevelTabs = listOf(
 )
 
 private val topLevelRoutes = topLevelTabs.map { it.route }.toSet()
+private const val ANIM_MS = 220
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -62,24 +72,38 @@ class MainActivity : ComponentActivity() {
                 val backStack by navController.currentBackStackEntryAsState()
                 val currentRoute = backStack?.destination?.route ?: "home"
                 val showBottomBar = currentRoute in topLevelRoutes
+                val isTopLevelNav = currentRoute in topLevelRoutes
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
                         if (showBottomBar) {
-                            NavigationBar {
+                            NavigationBar(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                tonalElevation = 0.dp,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
                                 topLevelTabs.forEach { tab ->
                                     NavigationBarItem(
                                         selected = currentRoute == tab.route,
                                         onClick = {
-                                            navController.navigate(tab.route) {
-                                                popUpTo("home") { saveState = true }
-                                                launchSingleTop = true
-                                                restoreState = true
+                                            if (currentRoute != tab.route) {
+                                                navController.navigate(tab.route) {
+                                                    popUpTo(navController.graph.findStartDestination().id) {
+                                                        saveState = true
+                                                    }
+                                                    launchSingleTop = true
+                                                    restoreState = true
+                                                }
                                             }
                                         },
                                         icon = { Icon(tab.icon, contentDescription = tab.label) },
-                                        label = { Text(tab.label) }
+                                        label = { Text(tab.label) },
+                                        colors = NavigationBarItemDefaults.colors(
+                                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                                            indicatorColor = MaterialTheme.colorScheme.primaryContainer
+                                        )
                                     )
                                 }
                             }
@@ -89,7 +113,39 @@ class MainActivity : ComponentActivity() {
                     NavHost(
                         navController = navController,
                         startDestination = "home",
-                        modifier = Modifier.padding(padding)
+                        modifier = Modifier.padding(padding),
+                        enterTransition = {
+                            if (isTopLevelNav) {
+                                fadeIn(tween(ANIM_MS))
+                            } else {
+                                slideIntoContainer(
+                                    AnimatedContentTransitionScope.SlideDirection.Start,
+                                    tween(ANIM_MS)
+                                ) + fadeIn(tween(ANIM_MS))
+                            }
+                        },
+                        exitTransition = {
+                            if (isTopLevelNav) {
+                                fadeOut(tween(ANIM_MS))
+                            } else {
+                                slideOutOfContainer(
+                                    AnimatedContentTransitionScope.SlideDirection.Start,
+                                    tween(ANIM_MS)
+                                ) + fadeOut(tween((ANIM_MS * 0.7).toInt()))
+                            }
+                        },
+                        popEnterTransition = {
+                            slideIntoContainer(
+                                AnimatedContentTransitionScope.SlideDirection.End,
+                                tween(ANIM_MS)
+                            ) + fadeIn(tween(ANIM_MS))
+                        },
+                        popExitTransition = {
+                            slideOutOfContainer(
+                                AnimatedContentTransitionScope.SlideDirection.End,
+                                tween(ANIM_MS)
+                            ) + fadeOut(tween(ANIM_MS))
+                        }
                     ) {
                         composable("home") {
                             HomeScreen(
@@ -123,7 +179,12 @@ class MainActivity : ComponentActivity() {
                         composable("capture") {
                             CaptureScreen(
                                 onBack = { navController.popBackStack() },
-                                onSaved = { navController.popBackStack("home", false) }
+                                onSaved = { navController.popBackStack("home", false) },
+                                onOpenSettings = {
+                                    navController.navigate("settings") {
+                                        launchSingleTop = true
+                                    }
+                                }
                             )
                         }
                         composable(
