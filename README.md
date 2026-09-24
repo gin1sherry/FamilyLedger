@@ -16,13 +16,13 @@ Android 原生消费记账应用（Kotlin + Jetpack Compose）。
 - 路径：`android/`
 - 架构：MVVM + Repository + Hilt + Room + Compose
 - 网络：仅 AI 识别；Key 放 `android/local.properties`（勿提交）
-- **当前版本**：`0.3.0`（versionCode `3`，对应里程碑 M3）
+- **当前版本**：`0.5.0`（versionCode `5`，对应里程碑 M5）
 
 ## 状态
 
-- **M1–M3 完成**（应用版本 **0.3.0** / versionCode 3）：工程骨架、数据层、手动记账 + 首页时间线
-- 单测与 `assembleDebug` 已通过；可安装 debug APK 试记账
-- **本阶段编码已停止**，待确认后进入 M4（编辑/删除回算）
+- **M1–M5 完成**（应用版本 **0.5.0**）：骨架、数据层、记账首页、编辑删除、预算与 80% 横幅
+- 单测与 `assembleDebug` 已通过
+- **本阶段编码已停止**，待确认后进入 M6（识别 F1）
 
 ## Git
 

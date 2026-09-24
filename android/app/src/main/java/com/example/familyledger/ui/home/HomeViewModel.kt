@@ -2,12 +2,16 @@ package com.example.familyledger.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.familyledger.data.local.entity.Budget
 import com.example.familyledger.data.local.entity.Record
 import com.example.familyledger.data.repository.RecordRepository
 import com.example.familyledger.data.repository.SettingsRepository
+import com.example.familyledger.domain.budget.BudgetPolicy
+import com.example.familyledger.domain.usecase.BudgetAlert
 import com.example.familyledger.domain.util.Money
 import com.example.familyledger.domain.util.MonthLabel
 import com.example.familyledger.domain.util.MonthRange
+import com.example.familyledger.ui.budget.BudgetAlertBus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,18 +25,28 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class DayGroup(
-    val dayLabel: String, // MM-DD
+    val dayLabel: String,
     val records: List<Record>
 )
+
+data class CategoryProgress(
+    val category: String,
+    val spentCents: Long,
+    val budgetCents: Long
+) {
+    val percent: Int get() = BudgetPolicy.alertPercent(spentCents, budgetCents)
+}
 
 data class HomeUiState(
     val yearMonth: String = MonthRange.now().yearMonth,
     val monthLabel: String = "",
     val totalSpentCents: Long = 0L,
     val monthlyBudgetCents: Long = 0L,
+    val categoryProgress: List<CategoryProgress> = emptyList(),
     val groups: List<DayGroup> = emptyList(),
     val visibleCount: Int = PAGE_SIZE,
-    val loading: Boolean = true
+    val loading: Boolean = true,
+    val alert: BudgetAlert? = null
 ) {
     val hasMore: Boolean get() = groups.sumOf { it.records.size } > visibleCount
     val budgetText: String
@@ -62,34 +76,67 @@ data class HomeUiState(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val records: RecordRepository,
-    settings: SettingsRepository
+    settings: SettingsRepository,
+    alertBus: BudgetAlertBus
 ) : ViewModel() {
 
     private val yearMonth = MutableStateFlow(MonthRange.now().yearMonth)
     private val visibleCount = MutableStateFlow(HomeUiState.PAGE_SIZE)
+    private val alert = MutableStateFlow<BudgetAlert?>(null)
+
+    init {
+        viewModelScope.launch {
+            alertBus.alerts.collect { alert.value = it }
+        }
+    }
+
+    private data class MonthData(
+        val list: List<Record>,
+        val spent: Long,
+        val budgets: List<Budget>
+    )
 
     val uiState: StateFlow<HomeUiState> = combine(
         yearMonth,
         visibleCount,
+        settings.monthlyBudgetCents,
+        alert,
         yearMonth.flatMapLatest { ym ->
-            records.observeMonth(MonthRange.fromYearMonth(ym))
-        },
-        yearMonth.flatMapLatest { ym ->
-            records.observeTotalSpent(MonthRange.fromYearMonth(ym))
-        },
-        settings.monthlyBudgetCents
-    ) { ym, count, list, spent, budget ->
-        val groups = list.groupBy { dayKey(it.date) }
+            combine(
+                records.observeMonth(MonthRange.fromYearMonth(ym)),
+                records.observeTotalSpent(MonthRange.fromYearMonth(ym)),
+                records.observeBudgets(ym)
+            ) { list, spent, budgets -> MonthData(list, spent, budgets) }
+        }
+    ) { ym, count, budget, alertVal, data ->
+        val groups = data.list.groupBy { dayKey(it.date) }
             .toSortedMap(compareByDescending { it })
             .map { (day, items) -> DayGroup(day, items) }
+
+        val spentByCat = data.list.groupBy { it.category }
+            .mapValues { (_, rs) -> rs.sumOf { it.price } }
+
+        val catProgress = data.budgets
+            .filter { it.amount > 0 && it.category != BudgetPolicy.CATEGORY_ALL }
+            .map { b ->
+                CategoryProgress(
+                    category = b.category,
+                    spentCents = spentByCat[b.category] ?: 0L,
+                    budgetCents = b.amount
+                )
+            }
+            .sortedByDescending { it.percent }
+
         HomeUiState(
             yearMonth = ym,
             monthLabel = MonthLabel.of(ym),
-            totalSpentCents = spent,
+            totalSpentCents = data.spent,
             monthlyBudgetCents = budget,
+            categoryProgress = catProgress,
             groups = groups,
             visibleCount = count,
-            loading = false
+            loading = false,
+            alert = alertVal
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
@@ -101,8 +148,8 @@ class HomeViewModel @Inject constructor(
         visibleCount.update { it + HomeUiState.PAGE_SIZE }
     }
 
-    fun delete(id: Long) {
-        viewModelScope.launch { records.deleteRecord(id) }
+    fun dismissAlert() {
+        alert.value = null
     }
 
     private fun dayKey(millis: Long): String {

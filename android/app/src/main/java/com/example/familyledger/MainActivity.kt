@@ -24,11 +24,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.familyledger.ui.budget.BudgetScreen
 import com.example.familyledger.ui.detail.DetailScreen
+import com.example.familyledger.ui.edit.EditRecordScreen
 import com.example.familyledger.ui.home.HomeScreen
 import com.example.familyledger.ui.manual.ManualEntryScreen
 import com.example.familyledger.ui.screens.SearchPlaceholder
-import com.example.familyledger.ui.screens.SettingsPlaceholder
+import com.example.familyledger.ui.screens.SettingsScreen
 import com.example.familyledger.ui.theme.FamilyLedgerTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -89,11 +91,17 @@ class MainActivity : ComponentActivity() {
                         composable("home") {
                             HomeScreen(
                                 onAddClick = { navController.navigate("manual") },
-                                onRecordClick = { id -> navController.navigate("detail/$id") }
+                                onRecordClick = { id -> navController.navigate("detail/$id") },
+                                onBudgetClick = { navController.navigate("budget") }
                             )
                         }
                         composable("search") { SearchPlaceholder() }
-                        composable("settings") { SettingsPlaceholder() }
+                        composable("settings") {
+                            SettingsScreen(onBudgetClick = { navController.navigate("budget") })
+                        }
+                        composable("budget") {
+                            BudgetScreen(onBack = { navController.popBackStack() })
+                        }
                         composable("manual") {
                             ManualEntryScreen(
                                 onBack = { navController.popBackStack() },
@@ -104,7 +112,20 @@ class MainActivity : ComponentActivity() {
                             route = "detail/{recordId}",
                             arguments = listOf(navArgument("recordId") { type = NavType.LongType })
                         ) {
-                            DetailScreen(onBack = { navController.popBackStack() })
+                            DetailScreen(
+                                onBack = { navController.popBackStack() },
+                                onEdit = { id -> navController.navigate("edit/$id") },
+                                onDeleted = { navController.popBackStack("home", false) }
+                            )
+                        }
+                        composable(
+                            route = "edit/{recordId}",
+                            arguments = listOf(navArgument("recordId") { type = NavType.LongType })
+                        ) {
+                            EditRecordScreen(
+                                onBack = { navController.popBackStack() },
+                                onSaved = { navController.popBackStack() }
+                            )
                         }
                     }
                 }
