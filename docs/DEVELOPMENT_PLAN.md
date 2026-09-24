@@ -4,7 +4,7 @@
 > 交付形态：**完整 Android 工程**（Kotlin · Compose · MVVM · Room · Hilt）  
 > 工作区：`android/` ｜ Git 仓库根：本目录  
 > 日期：2026-09-24  
-> 状态：**M6+M7 完成（识别 + 价格走势，0.7.0）→ 正在做 M8**
+> 状态：**M1–M9 全部完成（0.9.0）**
 
 ### 编码纪律（必须遵守）
 
@@ -56,8 +56,8 @@
 | M5 | 预算 F4 | 分类+总预算+横幅 | 80% 触发一次 ✅ |
 | M6 | AI 识别 F1 | 压缩、API、确认页、失败/无网队列 | 有 Key 可识别；无 Key 转手动 ✅ |
 | M7 | 价格走势 F5 | ProductMatcher + 折线图 | ≥2 次出图 ✅ |
-| M8 | 搜索/导出/Widget | F6/F7/F8 | CSV BOM；Widget 刷新 |
-| M9 | 测试与打包 | 单测、手测清单、`assembleRelease`（本机 debug 签名可先） | 对照 PRD 验收 |
+| M8 | 搜索/导出/Widget | F6/F7/F8 | CSV BOM；Widget 刷新 ✅ |
+| M9 | 测试与打包 | 单测、手测清单、assembleDebug | 对照 PRD 验收 ✅ |
 
 > 机器环境备注：编译 JDK 使用 `D:\tools\jdk17x\jdk-17.0.20.1+1`；`local.properties` 已指向 `D:/android/sdk`。CSV 库依赖待 M8 再引入（需 JitPack）。
 

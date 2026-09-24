@@ -15,8 +15,8 @@ android {
         minSdk = 29
         targetSdk = 35
         // 里程碑：M5=0.5.0 / M6+M7=0.7.0 / M8+M9=0.9.0
-        versionCode = 7
-        versionName = "0.7.0"
+        versionCode = 9
+        versionName = "0.9.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

@@ -28,10 +28,11 @@ import com.example.familyledger.ui.budget.BudgetScreen
 import com.example.familyledger.ui.capture.CaptureScreen
 import com.example.familyledger.ui.detail.DetailScreen
 import com.example.familyledger.ui.edit.EditRecordScreen
+import com.example.familyledger.ui.export.ExportScreen
 import com.example.familyledger.ui.home.HomeScreen
 import com.example.familyledger.ui.manual.ManualEntryScreen
 import com.example.familyledger.ui.product.ProductScreen
-import com.example.familyledger.ui.screens.SearchPlaceholder
+import com.example.familyledger.ui.search.SearchScreen
 import com.example.familyledger.ui.screens.SettingsScreen
 import com.example.familyledger.ui.theme.FamilyLedgerTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -98,12 +99,20 @@ class MainActivity : ComponentActivity() {
                                 onBudgetClick = { navController.navigate("budget") }
                             )
                         }
-                        composable("search") { SearchPlaceholder() }
+                        composable("search") {
+                            SearchScreen(onRecordClick = { id -> navController.navigate("detail/$id") })
+                        }
                         composable("settings") {
-                            SettingsScreen(onBudgetClick = { navController.navigate("budget") })
+                            SettingsScreen(
+                                onBudgetClick = { navController.navigate("budget") },
+                                onExportClick = { navController.navigate("export") }
+                            )
                         }
                         composable("budget") {
                             BudgetScreen(onBack = { navController.popBackStack() })
+                        }
+                        composable("export") {
+                            ExportScreen(onBack = { navController.popBackStack() })
                         }
                         composable("manual") {
                             ManualEntryScreen(
@@ -120,8 +129,7 @@ class MainActivity : ComponentActivity() {
                         composable(
                             route = "detail/{recordId}",
                             arguments = listOf(navArgument("recordId") { type = NavType.LongType })
-                        ) { entry ->
-                            val id = entry.arguments?.getLong("recordId") ?: -1L
+                        ) {
                             DetailScreen(
                                 onBack = { navController.popBackStack() },
                                 onEdit = { rid -> navController.navigate("edit/$rid") },
