@@ -14,9 +14,9 @@ android {
         applicationId = "com.example.familyledger"
         minSdk = 29
         targetSdk = 35
-        // 里程碑：M1=0.1.0 … M4=0.4.0 / M5=0.5.0；versionCode 与里程碑序号对齐
-        versionCode = 5
-        versionName = "0.5.0"
+        // 里程碑：M5=0.5.0 / M6+M7=0.7.0 / M8+M9=0.9.0
+        versionCode = 7
+        versionName = "0.7.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

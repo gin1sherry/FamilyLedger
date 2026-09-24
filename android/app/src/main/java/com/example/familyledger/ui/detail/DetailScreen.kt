@@ -95,6 +95,7 @@ fun DetailScreen(
     onBack: () -> Unit,
     onEdit: (Long) -> Unit,
     onDeleted: () -> Unit,
+    onProduct: (Long) -> Unit,
     viewModel: DetailViewModel = hiltViewModel()
 ) {
     val record by viewModel.record.collectAsStateWithLifecycle()
@@ -191,6 +192,11 @@ fun DetailScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
+                    OutlinedButton(
+                        onClick = { onProduct(r.id) },
+                        enabled = !busy
+                    ) { Text("价格走势") }
+                    Spacer(modifier = Modifier.width(8.dp))
                     OutlinedButton(
                         onClick = { showDeleteConfirm = true },
                         enabled = !busy

@@ -25,10 +25,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.familyledger.ui.budget.BudgetScreen
+import com.example.familyledger.ui.capture.CaptureScreen
 import com.example.familyledger.ui.detail.DetailScreen
 import com.example.familyledger.ui.edit.EditRecordScreen
 import com.example.familyledger.ui.home.HomeScreen
 import com.example.familyledger.ui.manual.ManualEntryScreen
+import com.example.familyledger.ui.product.ProductScreen
 import com.example.familyledger.ui.screens.SearchPlaceholder
 import com.example.familyledger.ui.screens.SettingsScreen
 import com.example.familyledger.ui.theme.FamilyLedgerTheme
@@ -91,6 +93,7 @@ class MainActivity : ComponentActivity() {
                         composable("home") {
                             HomeScreen(
                                 onAddClick = { navController.navigate("manual") },
+                                onCaptureClick = { navController.navigate("capture") },
                                 onRecordClick = { id -> navController.navigate("detail/$id") },
                                 onBudgetClick = { navController.navigate("budget") }
                             )
@@ -108,14 +111,22 @@ class MainActivity : ComponentActivity() {
                                 onSaved = { navController.popBackStack("home", false) }
                             )
                         }
+                        composable("capture") {
+                            CaptureScreen(
+                                onBack = { navController.popBackStack() },
+                                onSaved = { navController.popBackStack("home", false) }
+                            )
+                        }
                         composable(
                             route = "detail/{recordId}",
                             arguments = listOf(navArgument("recordId") { type = NavType.LongType })
-                        ) {
+                        ) { entry ->
+                            val id = entry.arguments?.getLong("recordId") ?: -1L
                             DetailScreen(
                                 onBack = { navController.popBackStack() },
-                                onEdit = { id -> navController.navigate("edit/$id") },
-                                onDeleted = { navController.popBackStack("home", false) }
+                                onEdit = { rid -> navController.navigate("edit/$rid") },
+                                onDeleted = { navController.popBackStack("home", false) },
+                                onProduct = { rid -> navController.navigate("product/$rid") }
                             )
                         }
                         composable(
@@ -125,6 +136,17 @@ class MainActivity : ComponentActivity() {
                             EditRecordScreen(
                                 onBack = { navController.popBackStack() },
                                 onSaved = { navController.popBackStack() }
+                            )
+                        }
+                        composable(
+                            route = "product/{recordId}",
+                            arguments = listOf(navArgument("recordId") { type = NavType.LongType })
+                        ) { entry ->
+                            val id = entry.arguments?.getLong("recordId") ?: -1L
+                            ProductScreen(
+                                recordId = id,
+                                onBack = { navController.popBackStack() },
+                                onRecordClick = { rid -> navController.navigate("detail/$rid") }
                             )
                         }
                     }

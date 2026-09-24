@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -46,6 +47,7 @@ import com.example.familyledger.ui.components.BudgetAlertBanner
 @Composable
 fun HomeScreen(
     onAddClick: () -> Unit,
+    onCaptureClick: () -> Unit,
     onRecordClick: (Long) -> Unit,
     onBudgetClick: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
@@ -75,6 +77,9 @@ fun HomeScreen(
                 }
                 IconButton(onClick = onBudgetClick) {
                     Icon(Icons.Filled.Settings, contentDescription = "预算设置")
+                }
+                IconButton(onClick = onCaptureClick) {
+                    Icon(Icons.Filled.CameraAlt, contentDescription = "拍照记账")
                 }
             }
 
