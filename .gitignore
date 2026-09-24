@@ -1,0 +1,25 @@
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+.vscode/
+*.log
+node_modules/
+
+# Android / secrets — 必须忽略
+android/local.properties
+android/.gradle/
+android/build/
+android/app/build/
+android/captures/
+android/.cxx/
+*.apk
+*.aab
+*.keystore
+*.jks
+local.properties
+
+# 会话草稿
+index.html
+docs/gen_*.py

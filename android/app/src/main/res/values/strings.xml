@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">家庭账本</string>
+    <string name="export_title">数据导出</string>
+    <string name="budget_alert_format">%1$s预算已达 %2$d%%（%3$s / %4$s）</string>
+    <string name="no_network_save">当前无网络，已保存图片，联网后自动识别</string>
+    <string name="recognition_done">识别完成，请确认</string>
+    <string name="low_confidence">可能不准，请检查</string>
+</resources>
